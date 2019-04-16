@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<style type="text/css">
+body{
+	margin: 0;
+    background-image: url(grass.jpg); /* Путь к фоновому изображению */
+}
+
+</style>
+<input class="client-id" style="position: absolute; top: 0; left: 0;">
+<input class="connection" value="connection" type="submit" style="position: absolute; top: 0; left: 300px;">
+
+<canvas id="myCanvas" width="2000" height="2000" style="border:1px solid #d3d3d3;">
+
+Your browser does not support the HTML5 canvas tag.</canvas>
+<script type="text/javascript">
+
+var a, b;
+var ckv;
+var unit_color_mass = ["silver", "lime", "purple", "aqua", "red", "blue", "teal", "fuchsia", "orange", "maroon"];
+var start = true;
+var clicker = false;
+
+
+class Player{
+
+  constructor(id, x0, y0, x, y, spriteX, spriteY, spriteK, color, rad, rad2, cosa, sina, stop) {
+    this.x0 = x0;
+    this.y0 = y0;
+    this.x = x;
+    this.y = y;
+    this.sprite = {
+    	x: spriteX,
+    	y: spriteY,
+    	k: spriteK,
+    	img: new Image,
+    }
+    this.id = id; 
+    this.color = color;
+    this.width  = 60;
+    this.height = 120;
+    this.fontSize = this.width / 3;
+    this.sprite.img.src = "1.png";
+  }
+   move(){
+		ctx.fillStyle = this.color;
+
+		if (this.x0 == null){
+			
+			this.x0 = 0;
+			this.y0 = 0;
+			this.rad2 = 0;
+		}
+		if (this.sprite.x == undefined){
+			this.sprite.k = 1;
+			this.sprite.x = 150 * this.sprite.k + 40;
+			this.sprite.y = 0;
+		}		
+
+		if(this.rad > this.rad2){
+			this.rad2+=2;
+			this.stop= false;
+			this.x = Math.ceil(this.x0 - this.rad2 * this.cosa);
+			this.y = Math.ceil(this.y0 - this.rad2 * this.sina);
+		
+		}
+		else if(this.rad != 0 && this.stop == false){
+			this.x0 = this.x;
+			this.y0 = this.y;
+			this.stop = true;
+		}
+
+		ctx.fillRect(this.x - this.width / 2, this.y + 10, this.width, this.height / 3 + 5);	
+		ctx.drawImage(this.sprite.img, this.sprite.x, this.sprite.y, this.width, this.height, this.x  - this.width / 2, this.y  - this.height / 2, this.width, this.height);
+		ctx.fillStyle = "yellow";
+		ctx.font = this.fontSize + "px serif";
+		ctx.fillText(this.id, this.x - this.width / 2, this.y - this.height / 3);
+
+		collision();
+   }
+   getCoord(){
+		if(this.rad > this.rad2){
+			this.rad2 = 0;
+			this.x0 = this.x;
+			this.y0 = this.y;
+		}			
+		a = this.y0 - Number(clients[n].y);
+		b = this.x0 - Number(clients[n].x);
+		this.id = n;
+		ckv = a * a + b * b - 2*a*b*Math.cos(Math.PI/2);
+		this.rad = Math.sqrt(ckv);
+		this.cosa = b / this.rad;
+		this.sina = a / this.rad;						
+			if(this.rad > this.rad2){
+				this.rad2 = 0;
+			}
+			
+			if (this.color == undefined){
+				this.color = unit_color_mass[i];
+				if (i >= 10){
+		 			this.color = unit_color_mass[i % 10];
+				}
+			}		
+		i++;
+   } 
+   animateMe(){
+   		if (this.sprite.k < 6){
+			this.sprite.k++;
+		}
+		else{
+			this.sprite.k = 1;
+		}
+		if(this.rad  > this.rad2){
+			this.sprite.x = 150 * this.sprite.k + 40;
+			this.sprite.y = mass[-Math.round(this.cosa) + ", " + -Math.round(this.sina)]			
+		}
+		else{
+			this.sprite.x = 0 + 40;	
+		}
+   }
+}
+
+var player = [];
+
+
+var i = 0;
+
+var clientId = document.querySelector(".client-id");
+var connection = document.querySelector(".connection");
+
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+var img = new Image;
+img.src = "1.png";
+var server = new XMLHttpRequest;
+var server2 = new XMLHttpRequest;
+var clients;
+var client;
+
+window.addEventListener("load", function(){
+
+});
+
+var mass = [];
+
+mass["0, 1"] = 0;
+mass["0, -1"] = 120;
+mass["-1, 0"] = 240;
+mass["-1, -1"] = 240;
+mass["-1, 1"] = 240;
+mass["1, -1"] = 360;
+mass["1, 0"] = 360;
+mass["1, 1"] = 360;
+
+scene_update();
+
+c.addEventListener("click", function(e){
+	if (clicker == true){
+		serverSend(e.pageX, e.pageY, clientId.value);
+	}
+})
+
+function serverSend(x1, y1, id) {
+	server.open("GET", "http://localhost/dashboard/1/server/server.php?id=" + id + "&x1=" + x1 + "&y1=" + y1, true);
+	server.send();
+}
+
+c.addEventListener("touchstart", function (e) {
+	if (clicker == true){
+		serverSend(e.changedTouches[0].pageX, e.changedTouches[0].pageY,  clientId.value);
+	}
+})
+function serverReceive() {
+	server.onreadystatechange = function() {
+		if(server.status == 200 && server.readyState == 4) {
+			clients = JSON.parse(server.responseText);
+			for(n in clients) {
+
+				if (player[n] == undefined){	
+					player[n] = new Player();
+				}
+				player[n].getCoord();				
+			}
+		}
+      i = 0;
+	}
+
+}
+
+
+
+function serverReceive_start() {
+	server.onreadystatechange = function() {
+		if(server.status == 200 && server.readyState == 4) {
+			
+			clients = JSON.parse(server.responseText);
+			i = 0;
+			for(n in clients) {
+				if (player[n] == undefined){				
+					player[n] = new Player(null, Number(clients[n].x),  Number(clients[n].y), Number(clients[n].x),  Number(clients[n].y), null, null, 1, undefined);
+				}
+				player[n].id = n;
+				player[n].rad = 0;
+				player[n].cosa = 0;
+				player[n].sina = -1;
+				player[n].rad2 = 0;
+					if (player[n].color == undefined){
+						player[n].color = unit_color_mass[i];
+						if (i >= 10){
+				 			player[n].color = unit_color_mass[i % 10];
+						}
+					}					
+				i++;
+			}
+			start = false;
+		}		
+	}
+}
+
+
+setInterval(function(){
+		ctx.clearRect(0, 0, 2000, 2000);	
+	for (n in clients){
+	player[n].move();
+	}		
+}, 10)
+
+setInterval(function(){
+scene_update();
+
+}, 1000)
+
+function scene_update(){
+	
+	if (start == true){
+
+		serverSend();	
+		serverReceive_start();
+		// start = false;
+	}
+	else{
+
+		serverSend();
+		serverReceive();					
+
+	}
+	
+}	
+setInterval(function(){
+	
+	for (n in clients){
+		player[n].animateMe();
+	}
+
+}, 200)	
+
+function collision(){
+	// if (clicker == true){
+	// 	for (let n = 0; n < i;  n++){
+	// 		for (let m = 0; m <= i;  m++){
+	// 			if(n != m){
+
+	// 				if(((player[n].x + this.width / 2 >= x[m] - this.width / 2) && (player[n].x - this.width / 2 <= x[m]) && ((player[n].y > y[m] - this.height / 2) && (player[n].y < y[m] + this.height / 2)) ||
+	// 					(player[n].x - this.width / 2 <= x[m] + this.width / 2) && (player[n].x + this.width / 2 >= x[m]) && ((player[n].y > y[m] - this.height / 2) && (player[n].y < y[m] + this.height / 2))
+	// 					// (player[n].y + this.height / 2 >= y[m] - this.height / 2) && (player[n].y - this.height / 2 <= y[m]) && ((player[n].x > x[m] - this.width / 2) && (player[n].x < x[m] + this.width / 2)) ||
+	// 					// (player[n].y - this.height / 2 <= y[m] + this.height / 2) && (player[n].y + this.height / 2 >= y[m]) && ((player[n].x > x[m] - this.width / 2) && (player[n].x < x[m] + this.width / 2))
+	// 					) &&
+	// 					player[n].rad2 != 0  && player[n].rad2 != 2){
+	// 					player[n].stop = true;
+	// 					player[n].rad2 = 0;
+	// 					player[n].rad = 0;
+	// 					player[n].x0 = player[n].x;
+	// 					player[n].y0 = player[n].y;
+	// 					serverSend(player[n].x, player[n].y, player[n].id);
+	// 					serverReceive();
+
+	// 					// alert(n + " " + m + " " + player[n].rad2);					
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+}
+
+connection.addEventListener("click", function() {
+clicker = true;
+})
+
+</script>
+</body>
+</html>
